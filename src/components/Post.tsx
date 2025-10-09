@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Post as PostType, Comment } from '../lib/supabase';
-import { Heart, MessageCircle, Trash2, User } from 'lucide-react';
+import { Heart, MessageCircle, Trash2, User, Share2, Maximize2 } from 'lucide-react';
+import ImageZoom from './ImageZoom';
 
 interface PostProps {
   post: PostType;
@@ -16,6 +17,8 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
   const { user } = useAuth();
 
   const isLiked = likes.includes(user?.id || '');
@@ -120,6 +123,27 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
     }
   };
 
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}?post=${post.id}`;
+    const shareData = {
+      title: `Post by @${post.profiles?.username}`,
+      text: post.content,
+      url: postUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(postUrl);
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 2000);
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
   const formatDate = (date: string) => {
     const now = new Date();
     const postDate = new Date(date);
@@ -136,7 +160,7 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white bg-opacity-95 backdrop-blur-lg rounded-xl shadow-lg border border-white border-opacity-50 overflow-hidden">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <button
@@ -177,19 +201,27 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
         <p className="text-gray-800 text-lg leading-relaxed mb-4">{post.content}</p>
 
         {post.image_url && (
-          <div className="rounded-lg overflow-hidden mb-4">
+          <div className="relative rounded-lg overflow-hidden mb-4 group">
             <img
               src={post.image_url}
               alt="Post"
-              className="w-full max-h-96 object-cover"
+              className="w-full max-h-96 object-cover cursor-pointer transition-transform hover:scale-105"
+              onClick={() => setShowImageZoom(true)}
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
             />
+            <button
+              onClick={() => setShowImageZoom(true)}
+              className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition backdrop-blur-sm hover:bg-opacity-70"
+              aria-label="Zoom image"
+            >
+              <Maximize2 size={20} />
+            </button>
           </div>
         )}
 
-        <div className="flex items-center gap-6 pt-4 border-t border-gray-100">
+        <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
           <button
             onClick={handleLike}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
@@ -209,6 +241,21 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
             <MessageCircle size={20} />
             <span className="font-medium">{comments.length}</span>
           </button>
+
+          <div className="relative ml-auto">
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
+            >
+              <Share2 size={20} />
+              <span className="font-medium">Share</span>
+            </button>
+            {shareSuccess && (
+              <div className="absolute top-full mt-2 right-0 bg-green-600 text-white text-sm px-3 py-1 rounded-lg shadow-lg whitespace-nowrap">
+                Link copied!
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -261,6 +308,14 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
             ))}
           </div>
         </div>
+      )}
+
+      {showImageZoom && post.image_url && (
+        <ImageZoom
+          src={post.image_url}
+          alt="Post image"
+          onClose={() => setShowImageZoom(false)}
+        />
       )}
     </div>
   );

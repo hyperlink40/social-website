@@ -3,8 +3,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadImage, validateImageFile } from '../lib/imageUpload';
 import type { Profile as ProfileType, Post as PostType } from '../lib/supabase';
-import { ArrowLeft, User, UserPlus, UserMinus, Settings, Upload } from 'lucide-react';
+import { ArrowLeft, User, UserPlus, UserMinus, Settings, Upload, Share2, Maximize2 } from 'lucide-react';
 import Post from './Post';
+import ImageZoom from './ImageZoom';
 
 interface ProfileProps {
   userId: string;
@@ -24,6 +25,10 @@ export default function Profile({ userId, onBack, onUserClick }: ProfileProps) {
   const [avatarPreview, setAvatarPreview] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [showAvatarZoom, setShowAvatarZoom] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
+  const [friendRequestStatus, setFriendRequestStatus] = useState<'none' | 'pending' | 'accepted' | 'received'>('none');
+  const [friendRequestId, setFriendRequestId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
@@ -34,6 +39,7 @@ export default function Profile({ userId, onBack, onUserClick }: ProfileProps) {
     fetchPosts();
     if (!isOwnProfile) {
       checkFollowing();
+      checkFriendRequest();
     }
     fetchFollowCounts();
   }, [userId]);
@@ -91,6 +97,81 @@ export default function Profile({ userId, onBack, onUserClick }: ProfileProps) {
 
     setFollowerCount(followers || 0);
     setFollowingCount(following || 0);
+  };
+
+  const checkFriendRequest = async () => {
+    const { data: sentRequest } = await supabase
+      .from('friend_requests')
+      .select('id, status')
+      .eq('sender_id', user?.id)
+      .eq('receiver_id', userId)
+      .maybeSingle();
+
+    if (sentRequest) {
+      setFriendRequestStatus(sentRequest.status === 'accepted' ? 'accepted' : 'pending');
+      setFriendRequestId(sentRequest.id);
+      return;
+    }
+
+    const { data: receivedRequest } = await supabase
+      .from('friend_requests')
+      .select('id, status')
+      .eq('sender_id', userId)
+      .eq('receiver_id', user?.id)
+      .maybeSingle();
+
+    if (receivedRequest) {
+      setFriendRequestStatus(receivedRequest.status === 'accepted' ? 'accepted' : 'received');
+      setFriendRequestId(receivedRequest.id);
+    }
+  };
+
+  const handleFriendRequest = async () => {
+    if (friendRequestStatus === 'pending') {
+      await supabase
+        .from('friend_requests')
+        .delete()
+        .eq('id', friendRequestId);
+      setFriendRequestStatus('none');
+      setFriendRequestId(null);
+    } else if (friendRequestStatus === 'received') {
+      await supabase
+        .from('friend_requests')
+        .update({ status: 'accepted' })
+        .eq('id', friendRequestId);
+      setFriendRequestStatus('accepted');
+    } else if (friendRequestStatus === 'none') {
+      const { data } = await supabase
+        .from('friend_requests')
+        .insert({ sender_id: user?.id, receiver_id: userId })
+        .select()
+        .single();
+      if (data) {
+        setFriendRequestStatus('pending');
+        setFriendRequestId(data.id);
+      }
+    }
+  };
+
+  const handleShare = async () => {
+    const profileUrl = `${window.location.origin}?profile=${userId}`;
+    const shareData = {
+      title: `${profile.full_name}'s Profile`,
+      text: `Check out @${profile.username} on Social`,
+      url: profileUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(profileUrl);
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 2000);
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
   };
 
   const handleFollow = async () => {
@@ -184,61 +265,104 @@ export default function Profile({ userId, onBack, onUserClick }: ProfileProps) {
     <div className="max-w-3xl mx-auto">
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition"
+        className="flex items-center gap-2 text-white hover:text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg mb-6 transition backdrop-blur-sm"
       >
         <ArrowLeft size={20} />
         Back
       </button>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-        <div className="h-32 bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500"></div>
+      <div className="bg-white bg-opacity-95 backdrop-blur-lg rounded-xl shadow-lg border border-white border-opacity-50 overflow-hidden mb-6">
+        <div className="h-48 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 relative"></div>
 
         <div className="px-6 pb-6">
-          <div className="flex items-end justify-between -mt-16 mb-4">
-            <div className="w-32 h-32 bg-white rounded-full p-2 shadow-lg">
-              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+          <div className="flex items-end justify-between -mt-20 mb-4">
+            <div className="w-36 h-36 bg-white rounded-full p-2 shadow-xl group relative cursor-pointer" onClick={() => profile.avatar_url && setShowAvatarZoom(true)}>
+              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-4xl font-bold overflow-hidden">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
                     alt={profile.username}
-                    className="w-full h-full rounded-full object-cover"
+                    className="w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform"
                   />
                 ) : (
-                  <User size={48} />
+                  <User size={56} />
+                )}
+              </div>
+              {profile.avatar_url && (
+                <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center">
+                  <Maximize2 className="text-white opacity-0 group-hover:opacity-100 transition" size={24} />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              {isOwnProfile ? (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition font-medium"
+                >
+                  <Settings size={18} />
+                  Edit Profile
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleFollow}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition ${
+                      isFollowing
+                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:shadow-lg'
+                    }`}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserMinus size={18} />
+                        Unfollow
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus size={18} />
+                        Follow
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleFriendRequest}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+                      friendRequestStatus === 'accepted'
+                        ? 'bg-green-100 text-green-700'
+                        : friendRequestStatus === 'pending'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : friendRequestStatus === 'received'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {friendRequestStatus === 'accepted'
+                      ? 'Friends'
+                      : friendRequestStatus === 'pending'
+                      ? 'Pending'
+                      : friendRequestStatus === 'received'
+                      ? 'Accept'
+                      : 'Add Friend'}
+                  </button>
+                </>
+              )}
+              <div className="relative">
+                <button
+                  onClick={handleShare}
+                  className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                  aria-label="Share profile"
+                >
+                  <Share2 size={20} />
+                </button>
+                {shareSuccess && (
+                  <div className="absolute top-full mt-2 right-0 bg-green-600 text-white text-sm px-3 py-1 rounded-lg shadow-lg whitespace-nowrap">
+                    Link copied!
+                  </div>
                 )}
               </div>
             </div>
-
-            {isOwnProfile ? (
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
-              >
-                <Settings size={18} />
-                Edit Profile
-              </button>
-            ) : (
-              <button
-                onClick={handleFollow}
-                className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition ${
-                  isFollowing
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
-                {isFollowing ? (
-                  <>
-                    <UserMinus size={18} />
-                    Unfollow
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={18} />
-                    Follow
-                  </>
-                )}
-              </button>
-            )}
           </div>
 
           <div className="space-y-3">
@@ -412,6 +536,14 @@ export default function Profile({ userId, onBack, onUserClick }: ProfileProps) {
             </form>
           </div>
         </div>
+      )}
+
+      {showAvatarZoom && profile.avatar_url && (
+        <ImageZoom
+          src={profile.avatar_url}
+          alt={profile.username}
+          onClose={() => setShowAvatarZoom(false)}
+        />
       )}
     </div>
   );

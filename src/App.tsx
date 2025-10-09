@@ -21,10 +21,10 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
+          <div className="inline-block w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mb-4 shadow-lg"></div>
+          <p className="text-white font-semibold text-lg drop-shadow-lg">Loading...</p>
         </div>
       </div>
     );
@@ -38,7 +38,7 @@ function AppContent() {
     <>
       {view === 'feed' && <Feed onUserClick={handleUserClick} />}
       {view === 'profile' && (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="min-h-screen">
           <div className="max-w-3xl mx-auto px-4 py-6">
             <Profile
               userId={selectedUserId}

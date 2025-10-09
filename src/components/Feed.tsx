@@ -86,11 +86,11 @@ export default function Feed({ onUserClick }: FeedProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+    <div className="min-h-screen">
+      <header className="bg-white bg-opacity-95 backdrop-blur-lg border-b border-white border-opacity-20 sticky top-0 z-40 shadow-lg">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold gradient-text">
               Social
             </h1>
 
@@ -128,13 +128,13 @@ export default function Feed({ onUserClick }: FeedProps) {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm border border-gray-100">
+        <div className="flex gap-2 bg-white bg-opacity-90 backdrop-blur-lg rounded-xl p-1 shadow-lg border border-white border-opacity-50">
           <button
             onClick={() => setActiveTab('all')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition ${
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
               activeTab === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
+                : 'text-gray-600 hover:bg-white hover:bg-opacity-50'
             }`}
           >
             <Home size={18} />
@@ -142,10 +142,10 @@ export default function Feed({ onUserClick }: FeedProps) {
           </button>
           <button
             onClick={() => setActiveTab('following')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition ${
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
               activeTab === 'following'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
+                : 'text-gray-600 hover:bg-white hover:bg-opacity-50'
             }`}
           >
             <Users size={18} />
@@ -157,25 +157,26 @@ export default function Feed({ onUserClick }: FeedProps) {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="inline-block w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin shadow-lg"></div>
           </div>
         ) : posts.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <p className="text-gray-500 text-lg">
+          <div className="bg-white bg-opacity-90 backdrop-blur-lg rounded-xl shadow-lg border border-white border-opacity-50 p-12 text-center">
+            <p className="text-gray-600 text-lg font-medium">
               {activeTab === 'following'
                 ? 'Follow people to see their posts here'
                 : 'No posts yet. Be the first to post!'}
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {posts.map((post) => (
-              <Post
-                key={post.id}
-                post={post}
-                onPostDeleted={fetchPosts}
-                onUserClick={onUserClick}
-              />
+              <div key={post.id} className="hover-lift">
+                <Post
+                  post={post}
+                  onPostDeleted={fetchPosts}
+                  onUserClick={onUserClick}
+                />
+              </div>
             ))}
           </div>
         )}
