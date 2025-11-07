@@ -4,13 +4,14 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Post as PostType } from '../lib/supabase';
 import CreatePost from './CreatePost';
 import Post from './Post';
-import { Home, User, LogOut, Users } from 'lucide-react';
+import { Home, User, LogOut, Users, MessageCircle, Bell, Users2 } from 'lucide-react';
 
 interface FeedProps {
   onUserClick: (userId: string) => void;
+  onNavigate?: (view: 'feed' | 'profile' | 'messages' | 'notifications' | 'groups') => void;
 }
 
-export default function Feed({ onUserClick }: FeedProps) {
+export default function Feed({ onUserClick, onNavigate }: FeedProps) {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
@@ -94,7 +95,33 @@ export default function Feed({ onUserClick }: FeedProps) {
               Social
             </h1>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onNavigate?.('messages')}
+                className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                title="Messages"
+              >
+                <MessageCircle size={20} />
+              </button>
+
+              <button
+                onClick={() => onNavigate?.('notifications')}
+                className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                title="Notifications"
+              >
+                <Bell size={20} />
+              </button>
+
+              <button
+                onClick={() => onNavigate?.('groups')}
+                className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                title="Groups"
+              >
+                <Users2 size={20} />
+              </button>
+
+              <div className="w-px h-6 bg-gray-200"></div>
+
               <button
                 onClick={() => onUserClick(user?.id || '')}
                 className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"

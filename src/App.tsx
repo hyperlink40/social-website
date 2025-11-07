@@ -3,10 +3,13 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Auth from './components/Auth';
 import Feed from './components/Feed';
 import Profile from './components/Profile';
+import Messages from './components/Messages';
+import Notifications from './components/Notifications';
+import Groups from './components/Groups';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [view, setView] = useState<'feed' | 'profile'>('feed');
+  const [view, setView] = useState<'feed' | 'profile' | 'messages' | 'notifications' | 'groups'>('feed');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
 
   const handleUserClick = (userId: string) => {
@@ -36,7 +39,7 @@ function AppContent() {
 
   return (
     <>
-      {view === 'feed' && <Feed onUserClick={handleUserClick} />}
+      {view === 'feed' && <Feed onUserClick={handleUserClick} onNavigate={setView} />}
       {view === 'profile' && (
         <div className="min-h-screen">
           <div className="max-w-3xl mx-auto px-4 py-6">
@@ -48,6 +51,11 @@ function AppContent() {
           </div>
         </div>
       )}
+      {view === 'messages' && <Messages onBack={handleBackToFeed} />}
+      {view === 'notifications' && (
+        <Notifications onBack={handleBackToFeed} onUserClick={handleUserClick} />
+      )}
+      {view === 'groups' && <Groups onBack={handleBackToFeed} />}
     </>
   );
 }
