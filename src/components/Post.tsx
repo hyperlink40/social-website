@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Post as PostType, Comment } from '../lib/supabase';
 import { Heart, MessageCircle, Trash2, User, Share2, Maximize2 } from 'lucide-react';
 import ImageZoom from './ImageZoom';
+import EmojiPicker from './EmojiPicker';
+import EmojiReactions from './EmojiReactions';
 
 interface PostProps {
   post: PostType;
@@ -200,6 +202,8 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
 
         <p className="text-gray-800 text-lg leading-relaxed mb-4">{post.content}</p>
 
+        <EmojiReactions postId={post.id} />
+
         {post.image_url && (
           <div className="relative rounded-lg overflow-hidden mb-4 group">
             <img
@@ -271,6 +275,7 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 disabled={loading}
               />
+              <EmojiPicker onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)} />
               <button
                 type="submit"
                 disabled={loading || !commentText.trim()}

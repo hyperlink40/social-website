@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadImage, validateImageFile } from '../lib/imageUpload';
 import { ImagePlus, Send, X, Upload } from 'lucide-react';
+import EmojiPicker from './EmojiPicker';
 
 interface CreatePostProps {
   onPostCreated: () => void;
@@ -94,17 +95,24 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    setContent((prev) => prev + emoji);
+  };
+
   return (
     <div className="bg-white bg-opacity-95 backdrop-blur-lg rounded-xl shadow-lg border border-white border-opacity-50 p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="What's on your mind?"
-          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
-          rows={3}
-          disabled={loading}
-        />
+        <div className="flex gap-2">
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="What's on your mind?"
+            className="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+            rows={3}
+            disabled={loading}
+          />
+          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
