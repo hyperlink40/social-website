@@ -1,3 +1,1 @@
 /// <reference types="vite/client" />
-VITE_SUPABASE_URL="https://eljjkajkffpponmtouny.supabase.co"
-VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsamprYWprZmZwcG9ubXRvdW55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzODAwMDMsImV4cCI6MjA5MTk1NjAwM30.Dbntp3cV93QRWjdYxikkl9OFZJAU_bD7DWz9NrRwXec"
