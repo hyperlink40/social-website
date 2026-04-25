@@ -11,34 +11,75 @@ interface CreatePostProps {
 
 export default function CreatePost({ onPostCreated }: CreatePostProps) {
   const [content, setContent] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [showImageInput, setShowImageInput] = useState(false);
   const [uploadMode, setUploadMode] = useState<'url' | 'file'>('file');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [urlInput, setUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    const validationError = validateImageFile(file);
-    if (validationError) {
-      setError(validationError);
-      return;
+    const validationErrors: string[] = [];
+    const newFiles: File[] = [];
+
+    files.forEach((file) => {
+      const error = validateImageFile(file);
+      if (error) {
+        validationErrors.push(error);
+      } else {
+        newFiles.push(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviews((prev) => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    if (validationErrors.length > 0) {
+      setError(validationErrors[0]);
+    } else {
+      setError('');
     }
 
-    setError('');
-    setImageFile(file);
+    setImageFiles((prev) => [...prev, ...newFiles]);
+  };
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+  const removeImageFile = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeImageUrl = (index: number) => {
+    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addImageUrl = () => {
+    if (urlInput.trim()) {
+      setImageUrls((prev) => [...prev, urlInput.trim()]);
+      setUrlInput('');
+    }
+  };
+
+  const handleClearImages = () => {
+    setImageFiles([]);
+    setImageUrls([]);
+    setImagePreviews([]);
+    setUrlInput('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setContent((prev) => prev + emoji);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,33 +89,36 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     setLoading(true);
     setError('');
     try {
-      let finalImageUrl = '';
+      let allImageUrls: string[] = [];
 
-      if (uploadMode === 'file' && imageFile && user?.id) {
-        const uploadedUrl = await uploadImage(imageFile, user.id);
-        if (uploadedUrl) {
-          finalImageUrl = uploadedUrl;
-        } else {
-          setError('Failed to upload image');
+      if (uploadMode === 'file' && imageFiles.length > 0 && user?.id) {
+        const uploadedUrls = await Promise.all(
+          imageFiles.map((file) => uploadImage(file, user.id))
+        );
+        const validUrls = uploadedUrls.filter((url) => url !== null) as string[];
+        if (validUrls.length !== imageFiles.length) {
+          setError('Some images failed to upload');
           setLoading(false);
           return;
         }
-      } else if (uploadMode === 'url' && imageUrl.trim()) {
-        finalImageUrl = imageUrl.trim();
+        allImageUrls = validUrls;
+      } else if (uploadMode === 'url' && imageUrls.length > 0) {
+        allImageUrls = imageUrls;
       }
+
+      const firstImage = allImageUrls.length > 0 ? allImageUrls[0] : '';
 
       const { error: postError } = await supabase.from('posts').insert({
         user_id: user?.id,
         content: content.trim(),
-        image_url: finalImageUrl,
+        image_url: firstImage,
+        image_urls: allImageUrls,
       });
 
       if (postError) throw postError;
 
       setContent('');
-      setImageUrl('');
-      setImageFile(null);
-      setImagePreview('');
+      handleClearImages();
       setShowImageInput(false);
       setError('');
       onPostCreated();
@@ -84,19 +128,6 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview('');
-    setImageUrl('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setContent((prev) => prev + emoji);
   };
 
   return (
@@ -127,7 +158,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
                 type="button"
                 onClick={() => {
                   setUploadMode('file');
-                  setImageUrl('');
+                  setImageUrls([]);
                 }}
                 className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
                   uploadMode === 'file'
@@ -135,13 +166,17 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Upload File
+                Upload Files
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setUploadMode('url');
-                  handleRemoveImage();
+                  setImageFiles([]);
+                  setImagePreviews([]);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
                 }}
                 className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
                   uploadMode === 'url'
@@ -149,7 +184,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Image URL
+                Image URLs
               </button>
             </div>
 
@@ -160,71 +195,90 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
                   type="file"
                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={handleFileChange}
+                  multiple
                   className="hidden"
                   disabled={loading}
                 />
-                {!imagePreview ? (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-gray-600 hover:text-blue-600"
-                    disabled={loading}
-                  >
-                    <Upload size={24} />
-                    <span className="font-medium">Click to upload image</span>
-                  </button>
-                ) : (
-                  <div className="relative rounded-lg overflow-hidden border border-gray-200">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-48 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                    >
-                      <X size={18} />
-                    </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-gray-600 hover:text-blue-600"
+                  disabled={loading}
+                >
+                  <Upload size={24} />
+                  <span className="font-medium">Click to upload images (multiple allowed)</span>
+                </button>
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200 group">
+                        <img
+                          src={preview}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-20 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImageFile(index)}
+                          className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             ) : (
               <div className="space-y-2">
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Enter image URL (e.g., from Pexels)"
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  disabled={loading}
-                />
-                {imageUrl && (
-                  <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="Enter image URL (e.g., from Pexels)"
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={addImageUrl}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+                {imageUrls.map((url, index) => (
+                  <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200 group">
                     <img
-                      src={imageUrl}
-                      alt="Preview"
-                      className="w-full h-48 object-cover"
+                      src={url}
+                      alt={`URL ${index + 1}`}
+                      className="w-full h-32 object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => removeImageUrl(index)}
+                      className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
-                )}
+                ))}
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => {
-                setShowImageInput(false);
-                handleRemoveImage();
-              }}
-              className="text-sm text-gray-600 hover:text-gray-900 transition"
-            >
-              Remove image
-            </button>
+            {(imagePreviews.length > 0 || imageUrls.length > 0) && (
+              <button
+                type="button"
+                onClick={handleClearImages}
+                className="text-sm text-red-600 hover:text-red-900 transition"
+              >
+                Clear all images
+              </button>
+            )}
           </div>
         )}
 
@@ -237,8 +291,13 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
               disabled={loading}
             >
               <ImagePlus size={20} />
-              Add Image
+              Add Images
             </button>
+          )}
+          {(imagePreviews.length > 0 || imageUrls.length > 0) && (
+            <div className="text-xs text-gray-500">
+              {imagePreviews.length + imageUrls.length} image{imagePreviews.length + imageUrls.length !== 1 ? 's' : ''} added
+            </div>
           )}
 
           <button
