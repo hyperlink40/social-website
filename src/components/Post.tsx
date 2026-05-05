@@ -20,6 +20,7 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
+  const [zoomIndex, setZoomIndex] = useState(0);
   const [shareSuccess, setShareSuccess] = useState(false);
   const { user } = useAuth();
 
@@ -204,26 +205,57 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
 
         <EmojiReactions postId={post.id} />
 
-        {post.image_url && (
+        {post.image_urls && post.image_urls.length > 0 ? (
+          <div className={`rounded-lg overflow-hidden mb-4 gap-1 ${
+            post.image_urls.length === 1 ? 'grid grid-cols-1' :
+            post.image_urls.length === 2 ? 'grid grid-cols-2' :
+            post.image_urls.length === 3 ? 'grid grid-cols-3' :
+            'grid grid-cols-2'
+          }`}>
+            {post.image_urls.slice(0, 4).map((url, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={url}
+                  alt={`Post image ${index + 1}`}
+                  className={`w-full object-cover cursor-pointer transition-transform hover:scale-105 ${
+                    post.image_urls!.length === 1 ? 'max-h-96' : 'h-48'
+                  }`}
+                  onClick={() => { setZoomIndex(index); setShowImageZoom(true); }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <button
+                  onClick={() => { setZoomIndex(index); setShowImageZoom(true); }}
+                  className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition backdrop-blur-sm hover:bg-opacity-70"
+                  aria-label="Zoom image"
+                >
+                  <Maximize2 size={20} />
+                </button>
+                {index === 3 && post.image_urls!.length > 4 && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-2xl font-bold">
+                    +{post.image_urls!.length - 4}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : post.image_url ? (
           <div className="relative rounded-lg overflow-hidden mb-4 group">
             <img
               src={post.image_url}
               alt="Post"
               className="w-full max-h-96 object-cover cursor-pointer transition-transform hover:scale-105"
-              onClick={() => setShowImageZoom(true)}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
+              onClick={() => { setZoomIndex(0); setShowImageZoom(true); }}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
             <button
-              onClick={() => setShowImageZoom(true)}
+              onClick={() => { setZoomIndex(0); setShowImageZoom(true); }}
               className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition backdrop-blur-sm hover:bg-opacity-70"
               aria-label="Zoom image"
             >
               <Maximize2 size={20} />
             </button>
           </div>
-        )}
+        ) : null}
 
         <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
           <button
@@ -315,9 +347,9 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
         </div>
       )}
 
-      {showImageZoom && post.image_url && (
+      {showImageZoom && (post.image_urls?.length > 0 || post.image_url) && (
         <ImageZoom
-          src={post.image_url}
+          src={post.image_urls?.length > 0 ? post.image_urls[zoomIndex] : post.image_url}
           alt="Post image"
           onClose={() => setShowImageZoom(false)}
         />

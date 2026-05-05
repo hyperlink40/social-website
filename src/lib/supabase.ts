@@ -23,6 +23,7 @@ export interface Post {
   user_id: string;
   content: string;
   image_url: string;
+  image_urls: string[];
   created_at: string;
   profiles?: Profile;
   likes?: Like[];
