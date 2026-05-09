@@ -10,18 +10,11 @@ export default function Auth() {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [remainingTime, setRemainingTime] = useState(0);
   const { signUp, signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (remainingTime > 0) {
-      setError(`Please wait ${remainingTime} seconds before trying again`);
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -30,33 +23,8 @@ export default function Auth() {
       } else {
         await signIn(email, password);
       }
-
-      setRemainingTime(30);
-      const countdown = setInterval(() => {
-        setRemainingTime((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdown);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
     } catch (err: any) {
-      const message = err.message || 'An error occurred';
-      setError(message);
-
-      if (message.includes('rate limit') || message.includes('too many')) {
-        setRemainingTime(60);
-        const countdown = setInterval(() => {
-          setRemainingTime((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdown);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      }
+      setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -94,7 +62,6 @@ export default function Auth() {
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
-                    disabled={loading || remainingTime > 0}
                   />
                 </div>
                 <div>
@@ -107,7 +74,6 @@ export default function Auth() {
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
-                    disabled={loading || remainingTime > 0}
                   />
                 </div>
               </>
@@ -122,7 +88,6 @@ export default function Auth() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 required
-                disabled={loading || remainingTime > 0}
               />
             </div>
             <div>
@@ -136,19 +101,16 @@ export default function Auth() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 required
                 minLength={6}
-                disabled={loading || remainingTime > 0}
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading || remainingTime > 0}
+              disabled={loading}
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 'Please wait...'
-              ) : remainingTime > 0 ? (
-                `Try again in ${remainingTime}s`
               ) : isSignUp ? (
                 <>
                   <UserPlus size={20} />
@@ -168,10 +130,8 @@ export default function Auth() {
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError('');
-                setRemainingTime(0);
               }}
-              disabled={loading || remainingTime > 0}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium transition disabled:opacity-50"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium transition"
             >
               {isSignUp
                 ? 'Already have an account? Sign in'
