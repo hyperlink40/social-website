@@ -6,10 +6,11 @@ import Profile from './components/Profile';
 import Messages from './components/Messages';
 import Notifications from './components/Notifications';
 import Groups from './components/Groups';
+import SportsGroups from './components/SportsGroups';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [view, setView] = useState<'feed' | 'profile' | 'messages' | 'notifications' | 'groups'>('feed');
+  const [view, setView] = useState<'feed' | 'profile' | 'messages' | 'notifications' | 'groups' | 'sports-groups'>('feed');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
 
   const handleUserClick = (userId: string) => {
@@ -56,6 +57,11 @@ function AppContent() {
         <Notifications onBack={handleBackToFeed} onUserClick={handleUserClick} />
       )}
       {view === 'groups' && <Groups onBack={handleBackToFeed} />}
+      {view === 'sports-groups' && (
+        <div className="min-h-screen">
+          <SportsGroups />
+        </div>
+      )}
     </>
   );
 }

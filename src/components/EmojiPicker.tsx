@@ -39,17 +39,17 @@ export default function EmojiPicker({ onEmojiSelect }: EmojiPickerProps) {
       </button>
 
       {showPicker && (
-        <div className="absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-50 w-80">
-          <div className="grid grid-cols-8 gap-1 max-h-64 overflow-y-auto">
-            {EMOJIS.map((emoji) => (
+        <div className="absolute bottom-full right-0 mb-2 bg-white rounded-xl shadow-xl border border-gray-200 p-3 z-50 w-72">
+          <div className="grid grid-cols-8 gap-0.5 max-h-60 overflow-y-auto scrollbar-thin">
+            {EMOJIS.map((emoji, index) => (
               <button
-                key={emoji}
+                key={`${emoji}-${index}`}
                 type="button"
                 onClick={() => {
                   onEmojiSelect(emoji);
                   setShowPicker(false);
                 }}
-                className="p-2 text-xl hover:bg-gray-100 rounded transition text-center"
+                className="w-8 h-8 flex items-center justify-center text-lg hover:bg-gray-100 rounded-md transition"
               >
                 {emoji}
               </button>
