@@ -6,6 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+interface SportsFetchRequest {
+  endpoint: "sports" | "event";
+  eventId?: string;
+  include?: string;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -15,7 +21,28 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const url = "https://therundown-therundown-v1.p.rapidapi.com/sports";
+    const { endpoint, eventId, include = "scores" }: SportsFetchRequest = await req.json();
+
+    if (!endpoint) {
+      return new Response(
+        JSON.stringify({ error: "endpoint is required ('sports' or 'event')" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (endpoint === "event" && !eventId) {
+      return new Response(
+        JSON.stringify({ error: "eventId is required for event endpoint" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const apiKey = Deno.env.get("RAPIDAPI_KEY");
     const apiHost = Deno.env.get("RAPIDAPI_HOST");
 
@@ -32,6 +59,13 @@ Deno.serve(async (req: Request) => {
           },
         }
       );
+    }
+
+    let url: string;
+    if (endpoint === "sports") {
+      url = `https://${apiHost}/sports`;
+    } else {
+      url = `https://${apiHost}/events/${eventId}?include=${include}`;
     }
 
     const response = await fetch(url, {
@@ -68,7 +102,7 @@ Deno.serve(async (req: Request) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching sports:", error);
+    console.error("Error fetching sports data:", error);
     return new Response(
       JSON.stringify({
         error: "Failed to fetch sports data",
