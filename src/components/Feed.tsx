@@ -8,7 +8,7 @@ import { Home, User, LogOut, Users, MessageCircle, Bell, Users2 } from 'lucide-r
 
 interface FeedProps {
   onUserClick: (userId: string) => void;
-  onNavigate?: (view: 'feed' | 'profile' | 'messages' | 'notifications' | 'groups' | 'sports-groups') => void;
+  onNavigate?: (view: 'feed' | 'profile' | 'messages' | 'notifications' | 'groups') => void;
 }
 
 export default function Feed({ onUserClick, onNavigate }: FeedProps) {
@@ -118,14 +118,6 @@ export default function Feed({ onUserClick, onNavigate }: FeedProps) {
                 title="Groups"
               >
                 <Users2 size={20} />
-              </button>
-
-              <button
-                onClick={() => onNavigate?.('sports-groups')}
-                className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                title="Sports Groups"
-              >
-                <span className="text-lg">⚽</span>
               </button>
 
               <div className="w-px h-6 bg-gray-200"></div>
