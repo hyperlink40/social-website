@@ -6,6 +6,7 @@ import { Heart, MessageCircle, Trash2, User, Share2, Maximize2 } from 'lucide-re
 import ImageZoom from './ImageZoom';
 import EmojiPicker from './EmojiPicker';
 import EmojiReactions from './EmojiReactions';
+import LinkPreviewCard from './LinkPreviewCard';
 
 interface PostProps {
   post: PostType;
@@ -21,6 +22,7 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
   const [loading, setLoading] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [linkPreviews, setLinkPreviews] = useState<any[]>([]);
   const { user } = useAuth();
 
   const isLiked = likes.includes(user?.id || '');
@@ -29,6 +31,7 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
   useEffect(() => {
     fetchLikes();
     fetchComments();
+    fetchLinkPreviews();
 
     const likesChannel = supabase
       .channel(`likes:${post.id}`)
@@ -78,6 +81,22 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
 
     if (data) {
       setComments(data);
+    }
+  };
+
+  const fetchLinkPreviews = async () => {
+    try {
+      const { data } = await supabase
+        .from('post_links')
+        .select('*, link_previews(*)')
+        .eq('post_id', post.id)
+        .order('position');
+
+      if (data) {
+        setLinkPreviews(data.map((pl: any) => pl.link_previews));
+      }
+    } catch (err) {
+      console.error('Error fetching link previews:', err);
     }
   };
 
@@ -203,6 +222,14 @@ export default function Post({ post, onPostDeleted, onUserClick }: PostProps) {
         <p className="text-gray-800 text-lg leading-relaxed mb-4">{post.content}</p>
 
         <EmojiReactions postId={post.id} />
+
+        {linkPreviews.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {linkPreviews.map((preview) => (
+              <LinkPreviewCard key={preview.id} preview={preview} />
+            ))}
+          </div>
+        )}
 
         {post.image_url && (
           <div className="relative rounded-lg overflow-hidden mb-4 group">

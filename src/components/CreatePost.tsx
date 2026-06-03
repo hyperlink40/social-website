@@ -2,8 +2,10 @@ import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadImage, validateImageFile } from '../lib/imageUpload';
+import { extractUrls, fetchLinkPreview, saveLinkPreview, linkPostWithPreview } from '../lib/linkPreview';
 import { ImagePlus, Send, X, Upload } from 'lucide-react';
 import EmojiPicker from './EmojiPicker';
+import LinkPreviewCard from './LinkPreviewCard';
 
 interface CreatePostProps {
   onPostCreated: () => void;
@@ -19,6 +21,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [urlInput, setUrlInput] = useState('');
+  const [linkPreviews, setLinkPreviews] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
@@ -82,6 +85,29 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     setContent((prev) => prev + emoji);
   };
 
+  const extractAndProcessLinks = async (text: string) => {
+    const urls = extractUrls(text);
+    if (urls.length === 0) {
+      setLinkPreviews([]);
+      return;
+    }
+
+    const newPreviews = [];
+    for (const url of urls) {
+      const preview = await fetchLinkPreview(url);
+      if (preview) {
+        newPreviews.push(preview);
+      }
+    }
+    setLinkPreviews(newPreviews);
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setContent(newContent);
+    extractAndProcessLinks(newContent);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
@@ -108,18 +134,33 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
 
       const firstImage = allImageUrls.length > 0 ? allImageUrls[0] : '';
 
-      const { error: postError } = await supabase.from('posts').insert({
-        user_id: user?.id,
-        content: content.trim(),
-        image_url: firstImage,
-        image_urls: allImageUrls,
-      });
+      const { data: post, error: postError } = await supabase
+        .from('posts')
+        .insert({
+          user_id: user?.id,
+          content: content.trim(),
+          image_url: firstImage,
+          image_urls: allImageUrls,
+        })
+        .select()
+        .maybeSingle();
 
       if (postError) throw postError;
+      if (!post) throw new Error('Failed to create post');
+
+      // Save link previews and create associations
+      for (let i = 0; i < linkPreviews.length; i++) {
+        const preview = linkPreviews[i];
+        const savedPreview = await saveLinkPreview(supabase, preview);
+        if (savedPreview) {
+          await linkPostWithPreview(supabase, post.id, savedPreview.id, i);
+        }
+      }
 
       setContent('');
       handleClearImages();
       setShowImageInput(false);
+      setLinkPreviews([]);
       setError('');
       onPostCreated();
     } catch (err) {
@@ -136,7 +177,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
         <div className="flex gap-2">
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={handleContentChange}
             placeholder="What's on your mind?"
             className="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
             rows={3}
@@ -148,6 +189,17 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
             {error}
+          </div>
+        )}
+
+        {linkPreviews.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-600">Link previews detected:</p>
+            <div className="grid grid-cols-1 gap-2">
+              {linkPreviews.map((preview) => (
+                <LinkPreviewCard key={preview.url} preview={preview} />
+              ))}
+            </div>
           </div>
         )}
 
