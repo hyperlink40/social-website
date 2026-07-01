@@ -1,0 +1,94 @@
+.dice-scene {
+  perspective: 800px;
+  width: 80px;
+  height: 80px;
+}
+
+.dice {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.dice-face {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+  backface-visibility: hidden;
+}
+
+.dice-face.front  { transform: translateZ(40px); }
+.dice-face.back   { transform: rotateY(180deg) translateZ(40px); }
+.dice-face.right  { transform: rotateY(90deg) translateZ(40px); }
+.dice-face.left   { transform: rotateY(-90deg) translateZ(40px); }
+.dice-face.top    { transform: rotateX(90deg) translateZ(40px); }
+.dice-face.bottom { transform: rotateX(-90deg) translateZ(40px); }
+
+/* Dot styling */
+.dots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+  width: 48px;
+  height: 48px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #475569, #1e293b);
+  box-shadow: inset -1px -1px 2px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  align-self: center;
+  justify-self: center;
+}
+
+/* Rolling animation keyframes */
+@keyframes rollDice1 {
+  0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  20%  { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+  40%  { transform: rotateX(1080deg) rotateY(720deg) rotateZ(360deg); }
+  60%  { transform: rotateX(1440deg) rotateY(1080deg) rotateZ(540deg); }
+  80%  { transform: rotateX(1620deg) rotateY(1260deg) rotateZ(630deg); }
+  100% { transform: rotateX(1800deg) rotateY(1440deg) rotateZ(720deg); }
+}
+
+@keyframes rollDice2 {
+  0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  20%  { transform: rotateX(-720deg) rotateY(360deg) rotateZ(-180deg); }
+  40%  { transform: rotateX(-1080deg) rotateY(720deg) rotateZ(-360deg); }
+  60%  { transform: rotateX(-1440deg) rotateY(1080deg) rotateZ(-540deg); }
+  80%  { transform: rotateX(-1620deg) rotateY(1260deg) rotateZ(-630deg); }
+  100% { transform: rotateX(-1800deg) rotateY(1440deg) rotateZ(-720deg); }
+}
+
+@keyframes rollDice3 {
+  0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  20%  { transform: rotateX(360deg) rotateY(-720deg) rotateZ(180deg); }
+  40%  { transform: rotateX(720deg) rotateY(-1080deg) rotateZ(360deg); }
+  60%  { transform: rotateX(1080deg) rotateY(-1440deg) rotateZ(540deg); }
+  80%  { transform: rotateX(1260deg) rotateY(-1620deg) rotateZ(630deg); }
+  100% { transform: rotateX(1440deg) rotateY(-1800deg) rotateZ(720deg); }
+}
+
+.dice.rolling-1 { animation: rollDice1 1.2s ease-out forwards; }
+.dice.rolling-2 { animation: rollDice2 1.2s ease-out forwards; }
+.dice.rolling-3 { animation: rollDice3 1.2s ease-out forwards; }
+
+/* Final face rotations */
+.dice.show-1 { transform: rotateX(0deg) rotateY(0deg); }
+.dice.show-2 { transform: rotateX(-90deg) rotateY(0deg); }
+.dice.show-3 { transform: rotateX(0deg) rotateY(-90deg); }
+.dice.show-4 { transform: rotateX(0deg) rotateY(90deg); }
+.dice.show-5 { transform: rotateX(90deg) rotateY(0deg); }
+.dice.show-6 { transform: rotateX(180deg) rotateY(0deg); }
