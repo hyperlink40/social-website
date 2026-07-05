@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { AuthProvider, useAuth } from '../context-football/AuthContext';
 import { DashboardLayout } from '../components-football/layout/DashboardLayout';
 import { DashboardHome } from '../pages-football/DashboardHome';
 import { PredictionsList } from '../pages-football/PredictionsList';
@@ -17,8 +18,15 @@ interface FootballDashboardProps {
   onBack: () => void;
 }
 
-export default function FootballDashboard({ onBack }: FootballDashboardProps) {
+function FootballDashboardContent({ onBack }: FootballDashboardProps) {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { user, login } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      login('user@example.com', 'free');
+    }
+  }, [user, login]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -64,5 +72,13 @@ export default function FootballDashboard({ onBack }: FootballDashboardProps) {
         {renderContent()}
       </DashboardLayout>
     </div>
+  );
+}
+
+export default function FootballDashboard(props: FootballDashboardProps) {
+  return (
+    <AuthProvider>
+      <FootballDashboardContent {...props} />
+    </AuthProvider>
   );
 }
