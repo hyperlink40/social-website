@@ -7,10 +7,12 @@ import Messages from './components/Messages';
 import Notifications from './components/Notifications';
 import Groups from './components/Groups';
 import SportsGroups from './components/SportsGroups';
+import SnakesLaddersGame from './components/SnakesLaddersGame';
+import FootballDashboard from './components/FootballDashboard';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [view, setView] = useState<'feed' | 'profile' | 'messages' | 'notifications' | 'groups' | 'sports-groups'>('feed');
+  const [view, setView] = useState<'feed' | 'profile' | 'messages' | 'notifications' | 'groups' | 'sports-groups' | 'snakes-game' | 'football-dashboard'>('feed');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
 
   const handleUserClick = (userId: string) => {
@@ -61,6 +63,12 @@ function AppContent() {
         <div className="min-h-screen">
           <SportsGroups />
         </div>
+      )}
+      {view === 'snakes-game' && (
+        <SnakesLaddersGame onBack={handleBackToFeed} />
+      )}
+      {view === 'football-dashboard' && (
+        <FootballDashboard onBack={handleBackToFeed} />
       )}
     </>
   );

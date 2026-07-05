@@ -4,11 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Post as PostType } from '../lib/supabase';
 import CreatePost from './CreatePost';
 import Post from './Post';
-import { Home, User, LogOut, Users, MessageCircle, Bell, Users2 } from 'lucide-react';
+import { Home, User, LogOut, Users, MessageCircle, Bell, Users as Users2, Gamepad2, Trophy } from 'lucide-react';
 
 interface FeedProps {
   onUserClick: (userId: string) => void;
-  onNavigate?: (view: 'feed' | 'profile' | 'messages' | 'notifications' | 'groups' | 'sports-groups') => void;
+  onNavigate?: (view: any) => void;
 }
 
 export default function Feed({ onUserClick, onNavigate }: FeedProps) {
@@ -126,6 +126,22 @@ export default function Feed({ onUserClick, onNavigate }: FeedProps) {
                 title="Sports Groups"
               >
                 <span className="text-lg">⚽</span>
+              </button>
+
+              <button
+                onClick={() => onNavigate?.('snakes-game')}
+                className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                title="Snakes & Ladders"
+              >
+                <Gamepad2 size={20} />
+              </button>
+
+              <button
+                onClick={() => onNavigate?.('football-dashboard')}
+                className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                title="Football Dashboard"
+              >
+                <Trophy size={20} />
               </button>
 
               <div className="w-px h-6 bg-gray-200"></div>
