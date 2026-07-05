@@ -6,7 +6,8 @@ import { Card, CardContent, Button, Badge } from '../components-football/ui';
 import { getPredictions, normalizeApiPrediction } from '../services-football/footballApi';
 import {
   TrendingUp, Activity, CheckCircle, History, User,
-  Target, Crown, Info, Mail, Shield, ArrowRight, Wifi, RefreshCw
+  Target, Crown, Info, Mail, Shield, ArrowRight, Wifi, RefreshCw,
+  Bell, Calendar, Zap, ChevronRight, Star
 } from 'lucide-react';
 
 export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
@@ -32,18 +33,18 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
   const winRate = user?.plan === 'premium' ? `${STATS.premiumWinRate}%` : `${STATS.freeWinRate}%`;
   const profit = user?.plan === 'premium' ? '+45.2 U' : '+12.5 U';
 
-  const recentResultsData = MOCK_RESULTS.slice(0, 4);
+  const recentResultsData = MOCK_RESULTS.slice(0, 5);
 
   const recentWins = recentResultsData.filter(r => r.outcome === 'win').length;
   const recentLosses = recentResultsData.filter(r => r.outcome === 'loss').length;
 
   const quickLinks = [
-    { id: 'predictions', label: 'All Predictions', desc: `${MOCK_PREDICTIONS.length} active picks`, icon: Target, color: 'from-blue-500 to-blue-700' },
-    { id: 'results', label: 'Results & Slides', desc: `${recentWins}W / ${recentLosses}L this month`, icon: History, color: 'from-emerald-500 to-green-700' },
-    { id: 'premium', label: 'Premium Access', desc: `${STATS.premiumWinRate}% win rate`, icon: Crown, color: 'from-amber-500 to-orange-600' },
-    { id: 'profile', label: 'My Profile', desc: 'Settings & notifications', icon: User, color: 'from-purple-500 to-violet-700' },
-    { id: 'about', label: 'About Us', desc: 'Our team & methodology', icon: Info, color: 'from-slate-500 to-slate-700' },
-    { id: 'contact', label: 'Contact & FAQ', desc: 'Get help from our team', icon: Mail, color: 'from-pink-500 to-rose-600' },
+    { id: 'predictions', label: 'All Predictions', desc: `${MOCK_PREDICTIONS.length} active picks`, icon: Target, color: 'from-blue-500 to-blue-700', stats: MOCK_PREDICTIONS.length },
+    { id: 'results', label: 'Results & Slides', desc: `${recentWins}W / ${recentLosses}L this month`, icon: History, color: 'from-emerald-500 to-green-700', stats: `${recentWins}W/${recentLosses}L` },
+    { id: 'premium', label: 'Premium Access', desc: `${STATS.premiumWinRate}% win rate`, icon: Crown, color: 'from-amber-500 to-orange-600', stats: `${STATS.premiumWinRate}%` },
+    { id: 'profile', label: 'My Profile', desc: 'Settings & notifications', icon: User, color: 'from-purple-500 to-violet-700', stats: null },
+    { id: 'about', label: 'About Us', desc: 'Our team & methodology', icon: Info, color: 'from-slate-500 to-slate-700', stats: null },
+    { id: 'contact', label: 'Contact & FAQ', desc: 'Get help from our team', icon: Mail, color: 'from-pink-500 to-rose-600', stats: null },
   ];
 
   return (
@@ -54,22 +55,27 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
             Welcome back, {user?.name}! 👋
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        {user?.plan === 'premium' && (
+        {user?.plan === 'premium' ? (
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 px-4 py-2 rounded-full text-sm font-semibold">
             <Crown className="w-4 h-4" /> Premium Member
           </div>
+        ) : (
+          <Button variant="premium" size="sm" onClick={() => setActiveTab('premium')} className="flex items-center gap-2">
+            <Star className="w-4 h-4" /> Upgrade to Premium
+          </Button>
         )}
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('results')}>
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
               <CheckCircle className="w-6 h-6" />
             </div>
             <div>
@@ -78,9 +84,9 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('results')}>
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
@@ -89,14 +95,25 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('predictions')}>
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
               <Activity className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Predictions</p>
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{MOCK_PREDICTIONS.length}</h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('profile')}>
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+              <Bell className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Notifications</p>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">3 New</h3>
             </div>
           </CardContent>
         </Card>
@@ -163,19 +180,28 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
       <div className="grid sm:grid-cols-2 gap-6">
         <Card>
           <CardContent className="p-5">
-            <h3 className="font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <History className="w-5 h-5 text-blue-500" /> Recent Results
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <History className="w-5 h-5 text-blue-500" /> Recent Results
+              </h3>
+              <Badge variant={recentWins > recentLosses ? 'success' : 'warning'}>
+                {recentWins}W / {recentLosses}L
+              </Badge>
+            </div>
             <div className="space-y-2">
-              {MOCK_RESULTS.slice(0, 4).map(r => (
-                <div key={r.id} className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{r.homeTeam} vs {r.awayTeam}</p>
-                    <p className="text-xs text-slate-400">{r.prediction}</p>
+              {MOCK_RESULTS.slice(0, 5).map(r => (
+                <div key={r.id} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{r.homeTeam} vs {r.awayTeam}</p>
+                    <p className="text-xs text-slate-400 truncate">{r.prediction}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{r.homeScore}–{r.awayScore}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.outcome === 'win' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      r.outcome === 'win'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    }`}>
                       {r.outcome.toUpperCase()}
                     </span>
                   </div>
@@ -190,18 +216,24 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
 
         <Card>
           <CardContent className="p-5">
-            <h3 className="font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-blue-500" /> Platform Stats
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-500" /> Platform Stats
+              </h3>
+              <Badge variant="premium">{STATS.totalPredictions} Predictions</Badge>
+            </div>
             <div className="space-y-3">
               {[
-                { label: 'Total Predictions Published', value: `${(STATS.totalPredictions / 1000).toFixed(1)}K` },
-                { label: 'Leagues Covered', value: `${STATS.leaguesCovered}+` },
-                { label: 'Active Members', value: `${(STATS.activeUsers / 1000).toFixed(0)}K+` },
-                { label: 'Avg Monthly ROI (Premium)', value: `+${STATS.monthlyROI}%` },
+                { label: 'Total Predictions Published', value: `${(STATS.totalPredictions / 1000).toFixed(1)}K`, icon: Target },
+                { label: 'Leagues Covered', value: `${STATS.leaguesCovered}+`, icon: Activity },
+                { label: 'Active Members', value: `${(STATS.activeUsers / 1000).toFixed(0)}K+`, icon: User },
+                { label: 'Avg Monthly ROI (Premium)', value: `+${STATS.monthlyROI}%`, icon: TrendingUp },
               ].map(s => (
-                <div key={s.label} className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2 last:border-0">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">{s.label}</span>
+                <div key={s.label} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <s.icon className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{s.label}</span>
+                  </div>
                   <span className="text-sm font-bold text-slate-900 dark:text-white">{s.value}</span>
                 </div>
               ))}
@@ -221,7 +253,7 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
           <CardContent className="p-8 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-                <Crown className="w-3 h-3" /> Premium Access
+                <Zap className="w-3 h-3" /> Premium Access
               </div>
               <h3 className="text-xl font-bold mb-2">Unlock Pro Predictions</h3>
               <p className="text-slate-300 max-w-md text-sm leading-relaxed">
@@ -229,7 +261,7 @@ export function DashboardHome({ setActiveTab }: { setActiveTab: (tab: string) =>
               </p>
             </div>
             <Button variant="premium" size="lg" className="shrink-0" onClick={() => setActiveTab('premium')}>
-              Upgrade Now <ArrowRight className="w-4 h-4 ml-2" />
+              <Crown className="w-4 h-4 mr-2" /> Upgrade Now
             </Button>
           </CardContent>
         </Card>

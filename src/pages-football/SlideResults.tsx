@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getPreviousResults, normalizeBetigoloResult, type BetigoloResult } from '../services-football/betigoloApi';
 import { useAuth } from '../context-football/AuthContext';
 import { Button, Card, CardContent, Badge } from '../components-football/ui';
@@ -6,7 +6,7 @@ import {
   TrendingUp, CheckCircle2, XCircle, BarChart3, Filter,
   ChevronLeft, ChevronRight, RefreshCw, Wifi, WifiOff,
   Copy, Check, Server, Globe, Database, FileJson, AlertTriangle,
-  ShieldCheck, Target, Clock
+  ShieldCheck, Target, Clock, Search, Calendar, X, ArrowUpDown
 } from 'lucide-react';
 
 interface ResultDisplay {
@@ -37,6 +37,8 @@ export function SlideResults({ setActiveTab }: { setActiveTab: (tab: string) => 
   const [slide, setSlide] = useState(0);
   const [filter, setFilter] = useState<'all' | 'win' | 'loss'>('all');
   const [activeSection, setActiveSection] = useState<'slideshow' | 'table' | 'raw_api'>('slideshow');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'profit' | 'odds'>('date');
 
   const [results, setResults] = useState<ResultDisplay[]>(EMPTY);
   const [rawResponse, setRawResponse] = useState<any>(null);
@@ -95,11 +97,39 @@ export function SlideResults({ setActiveTab }: { setActiveTab: (tab: string) => 
     if (!fetched) doFetch();
   }, [doFetch]);
 
-  const filteredResults = results.filter(r => {
-    if (filter === 'win') return r.outcome === 'win';
-    if (filter === 'loss') return r.outcome === 'loss';
-    return true;
-  });
+  const filteredResults = useMemo(() => {
+    let filtered = results.filter(r => {
+      if (filter === 'win') return r.outcome === 'win';
+      if (filter === 'loss') return r.outcome === 'loss';
+      return true;
+    });
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.homeTeam.toLowerCase().includes(query) ||
+        r.awayTeam.toLowerCase().includes(query) ||
+        r.league.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'date':
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        case 'profit':
+          return b.profitNum - a.profitNum;
+        case 'odds':
+          return parseFloat(b.odds) - parseFloat(a.odds);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [results, filter, searchQuery, sortBy]);
 
   const totalWins = results.filter(r => r.outcome === 'win').length;
   const totalLosses = results.filter(r => r.outcome === 'loss').length;
@@ -174,6 +204,37 @@ export function SlideResults({ setActiveTab }: { setActiveTab: (tab: string) => 
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           {loading ? 'Fetching BetiGolo...' : 'Fetch from BetiGolo API'}
         </Button>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search teams, leagues..."
+            className="pl-9 pr-8 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-48"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Sort */}
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="w-4 h-4 text-slate-400" />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="date">Sort by Date</option>
+            <option value="profit">Sort by Profit</option>
+            <option value="odds">Sort by Odds</option>
+          </select>
+        </div>
 
         {isConnected && (
           <div className="flex items-center gap-2 text-sm bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800">
